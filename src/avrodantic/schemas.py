@@ -1,4 +1,4 @@
-from typing import Literal, Callable, Any
+from typing import Literal, Callable, Any, Self
 
 from datetime import date, timedelta, datetime
 
@@ -55,7 +55,7 @@ class Record(NamedType):
             self.imports = type.imports
 
         @classmethod
-        def from_avro(cls, avro: dict, named_schemas: dict[str, Schema], parser: Callable[[], Schema]):
+        def from_avro(cls, avro: dict, named_schemas: dict[str, Schema], parser: Callable[[], Schema]) -> Self:
             return cls(
                 name=avro.get("name"),
                 type=parser(avro["type"], named_schemas),
@@ -87,7 +87,7 @@ class Record(NamedType):
         self.imports = concat_imports([self.IMPORTS] + [field.imports for field in fields])
 
     @classmethod
-    def from_avro(cls, avro: dict, named_schemas: dict[str, Schema], parser: Callable):
+    def from_avro(cls, avro: dict, named_schemas: dict[str, Schema], parser: Callable) -> Self:
         avro_fields = avro.get("fields", [])
         fields = [cls.Field.from_avro(field, named_schemas, parser=parser) for field in avro_fields]
         return cls(
@@ -98,7 +98,7 @@ class Record(NamedType):
             fields=fields,
         )
 
-    def to_pydantic(self):
+    def to_pydantic(self) -> str:
         out = f"class {self.typing}(BaseModel):"
         if self.doc is not None:
             out += f'\n    """{self.doc}"""\n'
@@ -127,7 +127,7 @@ class Enum(NamedType):
         self.default = default
 
     @classmethod
-    def from_avro(cls, avro: dict):
+    def from_avro(cls, avro: dict) -> Self:
         return cls(
             name=avro.get("name"),
             namespace=avro.get("namespace"),
@@ -140,7 +140,7 @@ class Enum(NamedType):
     def value_to_code(self, value: str) -> str:
         return f"{self.typing}.{value}"
 
-    def to_pydantic(self):
+    def to_pydantic(self) -> str:
         out = f"class {self.typing}(StrEnum):"
         if self.doc is not None:
             out += f'\n    """{self.doc}"""\n'
@@ -169,7 +169,7 @@ class Fixed(NamedType):
         self.aliases = aliases
 
     @classmethod
-    def from_avro(cls, avro: dict):
+    def from_avro(cls, avro: dict) -> Self:
         return cls(
             name=avro.get("name"),
             size=avro.get("size"),
@@ -178,7 +178,7 @@ class Fixed(NamedType):
             aliases=avro.get("aliases"),
         )
 
-    def to_pydantic(self):
+    def to_pydantic(self) -> str:
         return f"{self.typing}: type[bytes] = conbytes(min_length={self.size}, max_length={self.size})"
 
 
@@ -189,7 +189,7 @@ class Array(Schema):
         self.imports = items.imports
 
     @classmethod
-    def from_avro(cls, avro: dict, named_schemas: dict[str, Schema], parser: Callable):
+    def from_avro(cls, avro: dict, named_schemas: dict[str, Schema], parser: Callable) -> Self:
         return cls(items=parser(avro["items"], named_schemas), default=avro.get("default"))
 
     @property
@@ -204,7 +204,7 @@ class Map(Schema):
         self.imports = values.imports
 
     @classmethod
-    def from_avro(cls, avro: dict, named_schemas: dict[str, Schema], parser: Callable):
+    def from_avro(cls, avro: dict, named_schemas: dict[str, Schema], parser: Callable) -> Self:
         return cls(values=parser(avro["values"], named_schemas), default=avro.get("default"))
 
     @property
@@ -222,7 +222,7 @@ class Union(list[Schema], Schema):
         return " | ".join([s.typing for s in self])
 
     @classmethod
-    def from_avro(cls, avro: dict, named_schemas: dict[str, Schema], parser: Callable):
+    def from_avro(cls, avro: dict, named_schemas: dict[str, Schema], parser: Callable) -> Self:
         return cls([parser(schema, named_schemas) for schema in avro])
 
     def value_to_code(self, value: str) -> str:
@@ -326,7 +326,7 @@ class LogicalType(Schema):
             raise ValueError(f"Wrong type, must be in {cls.types} not '{avro_type}'.")
 
     @classmethod
-    def from_avro(cls, avro: dict) -> None:
+    def from_avro(cls, avro: dict) -> Self:
         cls.__validate_avro(avro)
         return cls()
 
@@ -340,7 +340,7 @@ class Decimal(LogicalType):
         self.scale = scale
 
     @classmethod
-    def from_avro(cls, avro: dict) -> None:
+    def from_avro(cls, avro: dict) -> Self:
         cls.__validate_avro(avro)
         return cls(precesion=avro.get("precision"), scale=avro.get("scale", 0))
 
@@ -399,7 +399,9 @@ class TimeMillis(LogicalType):
     def typing(self) -> str:
         return "time"
 
-    # TODO: add value_to_code
+    def value_to_code(self, value: int) -> str:
+        t = (datetime.min + timedelta(milliseconds=value)).time()
+        return f"time({t.hour}, {t.minute}, {t.second}, {t.microsecond})"
 
 
 class TimeMicros(LogicalType):
@@ -411,7 +413,9 @@ class TimeMicros(LogicalType):
     def typing(self) -> str:
         return "time"
 
-    # TODO: add value_to_code
+    def value_to_code(self, value: int) -> str:
+        t = (datetime.min + timedelta(microseconds=value)).time()
+        return f"time({t.hour}, {t.minute}, {t.second}, {t.microsecond})"
 
 
 class TimestampMillis(LogicalType):
