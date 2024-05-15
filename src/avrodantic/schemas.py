@@ -240,10 +240,10 @@ class Null(PrimitiveType):
     primitive_type = "null"
 
     @property
-    def typing(self) -> str:
+    def typing(self) -> Literal["None"]:
         return "None"
 
-    def value_to_code(self, value) -> str:
+    def value_to_code(self, value) -> Literal["None"]:
         return "None"
 
 
@@ -251,7 +251,7 @@ class Boolean(PrimitiveType):
     primitive_type = "boolean"
 
     @property
-    def typing(self) -> str:
+    def typing(self) -> Literal["bool"]:
         return "bool"
 
     def value_to_code(self, value: bool) -> str:
@@ -262,7 +262,7 @@ class Int(PrimitiveType):
     primitive_type = "int"
 
     @property
-    def typing(self) -> str:
+    def typing(self) -> Literal["int"]:
         return "int"
 
 
@@ -270,7 +270,7 @@ class Long(PrimitiveType):
     primitive_type = "long"
 
     @property
-    def typing(self) -> str:
+    def typing(self) -> Literal["int"]:
         return "int"
 
 
@@ -278,7 +278,7 @@ class Float(PrimitiveType):
     primitive_type = "float"
 
     @property
-    def typing(self) -> str:
+    def typing(self) -> Literal["float"]:
         return "float"
 
 
@@ -286,7 +286,7 @@ class Double(PrimitiveType):
     primitive_type = "double"
 
     @property
-    def typing(self) -> str:
+    def typing(self) -> Literal["float"]:
         return "float"
 
 
@@ -294,7 +294,7 @@ class Bytes(PrimitiveType):
     primitive_type = "bytes"
 
     @property
-    def typing(self) -> str:
+    def typing(self) -> Literal["bytes"]:
         return "bytes"
 
 
@@ -302,7 +302,7 @@ class String(PrimitiveType):
     primitive_type = "string"
 
     @property
-    def typing(self) -> str:
+    def typing(self) -> Literal["str"]:
         return "str"
 
     def value_to_code(self, value: str) -> str:
@@ -333,19 +333,28 @@ class LogicalType(Schema):
 
 class Decimal(LogicalType):
     logical_type = "decimal"
-    types = ["bytes", "fixed"]
+    types = ["bytes"]
 
     def __init__(self, precision: int, scale: int = 0) -> None:
         self.precision = precision
         self.scale = scale
 
     @classmethod
+    def __validate_avro(cls, avro: dict):
+        logical_type = avro.get("logicalType")
+        if cls.logical_type != logical_type:
+            raise ValueError(f"Wrong logicalType, must be '{cls.logical_type}' not '{logical_type}'.")
+        avro_type = avro.get("type")
+        if avro_type not in cls.types:
+            raise ValueError(f"Wrong type, must be in {cls.types} not '{avro_type}'.")
+
+    @classmethod
     def from_avro(cls, avro: dict) -> Self:
         cls.__validate_avro(avro)
-        return cls(precesion=avro.get("precision"), scale=avro.get("scale", 0))
+        return cls(precision=avro.get("precision"), scale=avro.get("scale", 0))
 
     @property
-    def typing(self) -> str:
+    def typing(self) -> Literal["float"]:
         return "float"
 
 
@@ -355,7 +364,7 @@ class UUID(LogicalType):
     imports = {"uuid": ["UUID"]}
 
     @property
-    def typing(self) -> str:
+    def typing(self) -> Literal["UUID"]:
         return "UUID"
 
     def value_to_code(self, value: str) -> str:
@@ -375,7 +384,7 @@ class Date(LogicalType):
     imports = {"datetime": ["date"]}
 
     @property
-    def typing(self) -> str:
+    def typing(self) -> Literal["date"]:
         return "date"
 
     def value_to_code(self, value: int) -> str:
@@ -396,7 +405,7 @@ class TimeMillis(LogicalType):
     imports = {"datetime": ["time"]}
 
     @property
-    def typing(self) -> str:
+    def typing(self) -> Literal["time"]:
         return "time"
 
     def value_to_code(self, value: int) -> str:
@@ -410,7 +419,7 @@ class TimeMicros(LogicalType):
     imports = {"datetime": ["time"]}
 
     @property
-    def typing(self) -> str:
+    def typing(self) -> Literal["time"]:
         return "time"
 
     def value_to_code(self, value: int) -> str:
@@ -424,7 +433,7 @@ class TimestampMillis(LogicalType):
     imports = {"pydantic": ["AwareDatetime"], "datetime": ["datetime", "timezone"]}
 
     @property
-    def typing(self) -> str:
+    def typing(self) -> Literal["AwareDatetime"]:
         return "AwareDatetime"
 
     def value_to_code(self, value: int) -> str:
@@ -438,7 +447,7 @@ class TimestampMicros(LogicalType):
     imports = {"pydantic": ["AwareDatetime"], "datetime": ["datetime", "timezone"]}
 
     @property
-    def typing(self) -> str:
+    def typing(self) -> Literal["AwareDatetime"]:
         return "AwareDatetime"
 
     def value_to_code(self, value: int) -> str:
@@ -452,7 +461,7 @@ class LocalTimestampMillis(LogicalType):
     imports = {"pydantic": ["NaiveDatetime"], "datetime": ["datetime"]}
 
     @property
-    def typing(self) -> str:
+    def typing(self) -> Literal["NaiveDatetime"]:
         return "NaiveDatetime"
 
     def value_to_code(self, value: int) -> str:
@@ -466,7 +475,7 @@ class LocalTimestampMicros(LogicalType):
     imports = {"pydantic": ["NaiveDatetime"], "datetime": ["datetime"]}
 
     @property
-    def typing(self) -> str:
+    def typing(self) -> Literal["NaiveDatetime"]:
         return "NaiveDatetime"
 
     def value_to_code(self, value: int) -> str:

@@ -1,5 +1,7 @@
 import fastavro.schema
 
+from typing import Iterable
+
 from avrodantic.helper import concat_imports
 
 from avrodantic.schemas import (
@@ -50,7 +52,7 @@ def parse_from_avro(avro: str | dict | list, named_schemas: dict[str, Schema]) -
                     raise ValueError(f"Unknown logical type: '{logical_type}' is not supported.")
         return parse_from_avro(avro_type, named_schemas)
 
-    # prase union (list) of schemas
+    # parse union (list) of schemas
     elif isinstance(avro, list):
         return Union.from_avro(avro, named_schemas, parser=parse_from_avro)
 
@@ -67,7 +69,7 @@ def __create_pydantic_code(schemas: list[NamedType], imports: dict[str, str]) ->
     return printable
 
 
-def __parse_avro(schema_path: str) -> list[NamedType]:
+def __parse_avro(schema_path: str) -> Iterable[NamedType]:
     schema = fastavro.schema.load_schema(schema_path)
     fa_parsed_schema = fastavro.schema.parse_schema(schema)
     fa_named_schemas: dict = fa_parsed_schema.get("__named_schemas")
