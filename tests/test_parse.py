@@ -1,9 +1,7 @@
 from avrodantic import schemas
-
-from hypothesis import given, strategies as st
-
 from avrodantic.parser import parse_from_avro
-
+from hypothesis import given
+from hypothesis import strategies as st
 
 PRIMITIVE_TYPES = ["null", "boolean", "int", "long", "float", "double", "bytes", "string"]
 

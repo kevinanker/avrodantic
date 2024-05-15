@@ -1,20 +1,20 @@
-import fastavro.schema
-
+from pathlib import Path
 from typing import Iterable
 
-from avrodantic.helper import concat_imports
+import fastavro.schema
 
+from avrodantic.helper import concat_imports
 from avrodantic.schemas import (
-    PRIMITIVE_TYPES,
     LOGICAL_TYPES,
-    Union,
-    Record,
-    Enum,
+    PRIMITIVE_TYPES,
     Array,
-    Map,
+    Enum,
     Fixed,
-    Schema,
+    Map,
     NamedType,
+    Record,
+    Schema,
+    Union,
 )
 
 
@@ -69,10 +69,10 @@ def __create_pydantic_code(schemas: list[NamedType], imports: dict[str, str]) ->
     return printable
 
 
-def __parse_avro(schema_path: str) -> Iterable[NamedType]:
+def __parse_avro(schema_path: Path) -> Iterable[NamedType]:
     schema = fastavro.schema.load_schema(schema_path)
     fa_parsed_schema = fastavro.schema.parse_schema(schema)
-    fa_named_schemas: dict = fa_parsed_schema.get("__named_schemas")
+    fa_named_schemas: dict = fa_parsed_schema.get("__named_schemas", {})
 
     named_schemas: dict[str, Schema] = {}
     for name, schema in reversed(fa_named_schemas.items()):
@@ -81,14 +81,8 @@ def __parse_avro(schema_path: str) -> Iterable[NamedType]:
     return named_schemas.values()
 
 
-def avro_to_pydantic(avro_file: str, pydantic_file: str | None = None) -> str:
-    schemas = __parse_avro(schema_path=avro_file)
+def avro_to_pydantic(avro_path: Path) -> str:
+    schemas = __parse_avro(schema_path=avro_path)
     imports = concat_imports([schema.imports for schema in schemas])
     code = __create_pydantic_code(schemas=schemas, imports=imports)
-
-    if pydantic_file is None:
-        return code
-    else:
-        # save the result in a file
-        with open(pydantic_file, mode="+w") as f:
-            f.write(code)
+    return code

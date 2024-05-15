@@ -1,9 +1,9 @@
-from avrodantic import schemas
-
-from datetime import date, datetime, timedelta, timezone, time
+from datetime import date, datetime, time, timedelta, timezone
 from uuid import UUID
 
-from hypothesis import given, strategies as st
+from avrodantic import schemas
+from hypothesis import given
+from hypothesis import strategies as st
 
 
 @given(st.uuids())

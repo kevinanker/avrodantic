@@ -1,6 +1,5 @@
-from typing import Literal, Callable, Any, Self
-
-from datetime import date, timedelta, datetime
+from datetime import date, datetime, timedelta
+from typing import Any, Callable, Literal, Self
 
 from avrodantic.helper import concat_imports
 
