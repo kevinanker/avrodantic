@@ -34,6 +34,15 @@ Documentation = "https://github.com/kevinanker/avrodantic#readme"
 Issues = "https://github.com/kevinanker/avrodantic/issues"
 Source = "https://github.com/kevinanker/avrodantic"
 
+[project.scripts]
+avrodantic = "avrodantic.cli:app"
+
+[tool.hatch.build.targets.sdist]
+only-include = ["avrodantic"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/avrodantic"]
+
 [tool.hatch.version]
 path = "src/avrodantic/__about__.py"
 
